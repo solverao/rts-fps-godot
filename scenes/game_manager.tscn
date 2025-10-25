@@ -1,0 +1,16 @@
+[gd_scene load_steps=4 format=3 uid="uid://df6kql5gmnoa2"]
+
+[ext_resource type="Script" uid="uid://cfemqpr7e2xbw" path="res://scripts/managers/game_manager.gd" id="1_udu3i"]
+[ext_resource type="PackedScene" uid="uid://cc1m2a1obsyn4" path="res://addons/fpc/character.tscn" id="2_oo155"]
+[ext_resource type="PackedScene" uid="uid://cf7brgwaxlmud" path="res://addons/3d_rts_camera/rtscam.tscn" id="3_eaq8r"]
+
+[node name="GameManager" type="Node3D" node_paths=PackedStringArray("fps_character", "rts_camera_node")]
+script = ExtResource("1_udu3i")
+fps_character = NodePath("Character")
+rts_camera_node = NodePath("RTScamera")
+
+[node name="Character" parent="." instance=ExtResource("2_oo155")]
+
+[node name="RTScamera" parent="." instance=ExtResource("3_eaq8r")]
+
+[node name="TransitionCamera3D" type="Camera3D" parent="."]

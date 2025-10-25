@@ -1,0 +1,22 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3 uid="uid://btcskr40i5w81"]
+
+[ext_resource type="Shader" uid="uid://fqd688dgjac6" path="res://shaders/soil.gdshader" id="1_lqesl"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_lqesl")
+shader_parameter/dark_dirt_color = Color(0.25, 0.18, 0.12, 1)
+shader_parameter/light_dirt_color = Color(0.45, 0.35, 0.25, 1)
+shader_parameter/sand_color = Color(0.7, 0.65, 0.5, 1)
+shader_parameter/rock_color = Color(0.4, 0.4, 0.38, 1)
+shader_parameter/roughness = 0.85
+shader_parameter/metallic = 0.0
+shader_parameter/height_transition_1 = 5.0
+shader_parameter/height_transition_2 = 15.0
+shader_parameter/height_blend_smoothness = 3.0
+shader_parameter/slope_threshold = 45.0
+shader_parameter/slope_smoothness = 10.0
+shader_parameter/noise_scale = 2.0
+shader_parameter/noise_detail_scale = 15.0
+shader_parameter/color_variation = 0.3
+shader_parameter/bump_strength = 0.5

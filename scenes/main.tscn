@@ -1,0 +1,14 @@
+[gd_scene load_steps=4 format=3 uid="uid://052dtx712xl6"]
+
+[ext_resource type="PackedScene" uid="uid://c3e4jgwt67ysd" path="res://scenes/plane.tscn" id="1_0wfyh"]
+[ext_resource type="PackedScene" uid="uid://df6kql5gmnoa2" path="res://scenes/game_manager.tscn" id="3_jyhfs"]
+[ext_resource type="PackedScene" uid="uid://8pik13p682ub" path="res://scenes/environments.tscn" id="3_sugp2"]
+
+[node name="Main" type="Node3D"]
+
+[node name="Plane" parent="." instance=ExtResource("1_0wfyh")]
+
+[node name="Environments" parent="." instance=ExtResource("3_sugp2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.4239807, 0)
+
+[node name="GameManager" parent="." instance=ExtResource("3_jyhfs")]
