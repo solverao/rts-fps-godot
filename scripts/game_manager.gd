@@ -23,9 +23,9 @@ func _ready():
 func setup_obstacles():
 	"""Configura obstáculos iniciales"""
 	# Ejemplos de obstáculos
-	flow_field.set_obstacle_area(Vector3(20, 0, 15), 3, true)
-	flow_field.set_obstacle_area(Vector3(40, 0, 25), 4, true)
-	flow_field.set_obstacle_area(Vector3(15, 0, 35), 2, true)
+	#flow_field.set_obstacle_area(Vector3(20, 0, 15), 3, true)
+	#flow_field.set_obstacle_area(Vector3(40, 0, 25), 4, true)
+	#flow_field.set_obstacle_area(Vector3(15, 0, 35), 2, true)
 	
 	# Áreas con costo elevado (terreno difícil)
 	flow_field.set_cost_area(Vector3(30, 0, 30), 5, 3)  # Lodo/arena
@@ -36,7 +36,7 @@ func spawn_test_units():
 		push_warning("No unit scene assigned")
 		return
 	
-	for i in range(30):
+	for i in range(20):
 		var unit = unit_scene.instantiate()
 		add_child(unit)
 		

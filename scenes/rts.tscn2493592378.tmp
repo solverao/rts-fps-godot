@@ -75,7 +75,7 @@ shape = SubResource("ConvexPolygonShape3D_dsjwe")
 [node name="RTScamera" parent="." instance=ExtResource("1_coxth")]
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24.904242, 0, 30.687881)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.4255505, 0, 33.649673)
 mesh = SubResource("BoxMesh_aqx2a")
 
 [node name="StaticBody3D" type="StaticBody3D" parent="MeshInstance3D"]
