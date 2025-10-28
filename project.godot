@@ -70,6 +70,13 @@ ui_shift={
 ]
 }
 
+[layer_names]
+
+3d_render/layer_1="Suelo"
+3d_render/layer_2="Unidades"
+3d_render/layer_3="Edificios"
+3d_render/layer_4="Obstaculos"
+
 [rendering]
 
 renderer/rendering_method="gl_compatibility"

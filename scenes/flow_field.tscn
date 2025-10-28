@@ -1,0 +1,10 @@
+[gd_scene load_steps=2 format=3 uid="uid://bn7fvmqi0qehs"]
+
+[ext_resource type="Script" uid="uid://bxpmoskpb7xr" path="res://scripts/flow_field.gd" id="1_l8263"]
+
+[node name="FlowField" type="Node3D"]
+script = ExtResource("1_l8263")
+
+[node name="FlowField" type="Node3D" parent="."]
+script = ExtResource("1_l8263")
+metadata/_custom_type_script = "uid://bxpmoskpb7xr"

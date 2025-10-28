@@ -1,0 +1,71 @@
+[gd_scene load_steps=13 format=3 uid="uid://052dtx712xl6"]
+
+[ext_resource type="Script" uid="uid://cxebiyxp0imcp" path="res://scripts/rts_controller.gd" id="1_jyhfs"]
+[ext_resource type="PackedScene" uid="uid://8pik13p682ub" path="res://scenes/environments.tscn" id="3_sugp2"]
+[ext_resource type="Script" uid="uid://bxpmoskpb7xr" path="res://scripts/flow_field.gd" id="4_jyhfs"]
+[ext_resource type="Script" uid="uid://dyo4fuv2rv0on" path="res://scripts/flow_field_manager.gd" id="5_tbgi4"]
+[ext_resource type="Script" uid="uid://cbwynxvvj6vkw" path="res://scripts/flow_field_unit.gd" id="6_o6xl0"]
+[ext_resource type="Script" uid="uid://bukyygo0xl40t" path="res://scripts/flow_field_visualizer.gd" id="6_tefeu"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0wfyh"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_sugp2"]
+material = SubResource("StandardMaterial3D_0wfyh")
+size = Vector2(20, 20)
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_0wfyh"]
+points = PackedVector3Array(-10, 0, -10, -10, 0, 10, 10, 0, -10, 10, 0, 10)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sugp2"]
+albedo_color = Color(0.9183691, 0, 0.06767511, 1)
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_jyhfs"]
+material = SubResource("StandardMaterial3D_sugp2")
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_tbgi4"]
+
+[node name="Main" type="Node3D"]
+script = ExtResource("1_jyhfs")
+
+[node name="Environments" parent="." instance=ExtResource("3_sugp2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.4239807, 0)
+
+[node name="StaticBody3D" type="StaticBody3D" parent="."]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="StaticBody3D"]
+mesh = SubResource("PlaneMesh_sugp2")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="StaticBody3D/MeshInstance3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.038374424, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D/MeshInstance3D/StaticBody3D"]
+shape = SubResource("ConvexPolygonShape3D_0wfyh")
+
+[node name="FlowFieldManager" type="Node" parent="."]
+script = ExtResource("5_tbgi4")
+metadata/_custom_type_script = "uid://dyo4fuv2rv0on"
+
+[node name="Units" type="CharacterBody3D" parent="." node_paths=PackedStringArray("flow_field")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.278604, 0)
+script = ExtResource("6_o6xl0")
+flow_field = NodePath("../FlowField")
+metadata/_custom_type_script = "uid://cbwynxvvj6vkw"
+
+[node name="Camera3D" type="Camera3D" parent="Units"]
+transform = Transform3D(0.99598074, -0.013846992, 0.088491075, -0.0005030324, 0.9870972, 0.16012165, -0.08956649, -0.1595226, 0.98312277, 0, 1.0497546, 2.5839672)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Units"]
+mesh = SubResource("CapsuleMesh_jyhfs")
+skeleton = NodePath("")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Units"]
+shape = SubResource("CapsuleShape3D_tbgi4")
+
+[node name="FlowField" type="Node3D" parent="."]
+script = ExtResource("4_jyhfs")
+grid_size = Vector2i(20, 20)
+metadata/_custom_type_script = "uid://bxpmoskpb7xr"
+
+[node name="FlowFieldVisualizer" type="MeshInstance3D" parent="."]
+script = ExtResource("6_tefeu")
+metadata/_custom_type_script = "uid://bukyygo0xl40t"

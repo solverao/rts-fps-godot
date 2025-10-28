@@ -1,0 +1,53 @@
+[gd_scene load_steps=12 format=3 uid="uid://bo4alqq10e4wb"]
+
+[ext_resource type="PackedScene" uid="uid://cf7brgwaxlmud" path="res://addons/3d_rts_camera/rtscam.tscn" id="1_coxth"]
+[ext_resource type="Script" uid="uid://jk4piq7hpiow" path="res://scripts/game_manager.gd" id="1_dsjwe"]
+[ext_resource type="PackedScene" uid="uid://c3e4jgwt67ysd" path="res://scenes/plane.tscn" id="2_7jm3t"]
+[ext_resource type="Script" uid="uid://c5yspreuon5gr" path="res://scripts/rts_unit.gd" id="3_7jm3t"]
+[ext_resource type="Script" uid="uid://bxpmoskpb7xr" path="res://scripts/flow_field.gd" id="5_wvw1b"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_coxth"]
+
+[sub_resource type="Sky" id="Sky_7jm3t"]
+sky_material = SubResource("ProceduralSkyMaterial_coxth")
+
+[sub_resource type="Environment" id="Environment_coxth"]
+background_mode = 2
+background_color = Color(0.08771039, 0.16241324, 0.36877948, 1)
+sky = SubResource("Sky_7jm3t")
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_dsjwe"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_wvw1b"]
+
+[sub_resource type="TorusMesh" id="TorusMesh_7jm3t"]
+
+[node name="RTS" type="Node3D"]
+script = ExtResource("1_dsjwe")
+
+[node name="RTScamera" parent="." instance=ExtResource("1_coxth")]
+
+[node name="Plane" parent="." instance=ExtResource("2_7jm3t")]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.8660254, 0.5, 0, -0.5, 0.8660254, 0, 3, 0)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_coxth")
+
+[node name="CharacterBody3D" type="CharacterBody3D" parent="."]
+script = ExtResource("3_7jm3t")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="CharacterBody3D"]
+shape = SubResource("CapsuleShape3D_dsjwe")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="CharacterBody3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1066487, 0)
+mesh = SubResource("CapsuleMesh_wvw1b")
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="CharacterBody3D"]
+mesh = SubResource("TorusMesh_7jm3t")
+
+[node name="FlowField3D" type="Node3D" parent="."]
+script = ExtResource("5_wvw1b")
+metadata/_custom_type_script = "uid://bxpmoskpb7xr"

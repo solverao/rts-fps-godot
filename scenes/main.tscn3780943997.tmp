@@ -1,0 +1,33 @@
+[gd_scene load_steps=7 format=3 uid="uid://052dtx712xl6"]
+
+[ext_resource type="Material" uid="uid://btcskr40i5w81" path="res://materials/soil.tres" id="3_jyhfs"]
+[ext_resource type="PackedScene" uid="uid://8pik13p682ub" path="res://scenes/environments.tscn" id="3_sugp2"]
+[ext_resource type="PackedScene" uid="uid://cc1m2a1obsyn4" path="res://addons/fpc/character.tscn" id="4_jyhfs"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0wfyh"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_sugp2"]
+material = SubResource("StandardMaterial3D_0wfyh")
+size = Vector2(20, 20)
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_0wfyh"]
+points = PackedVector3Array(-10, 0, -10, -10, 0, 10, 10, 0, -10, 10, 0, 10)
+
+[node name="Main" type="Node3D"]
+
+[node name="Environments" parent="." instance=ExtResource("3_sugp2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.4239807, 0)
+
+[node name="StaticBody3D" type="StaticBody3D" parent="."]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="StaticBody3D"]
+material_override = ExtResource("3_jyhfs")
+mesh = SubResource("PlaneMesh_sugp2")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="StaticBody3D/MeshInstance3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.038374424, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D/MeshInstance3D/StaticBody3D"]
+shape = SubResource("ConvexPolygonShape3D_0wfyh")
+
+[node name="Character" parent="." instance=ExtResource("4_jyhfs")]

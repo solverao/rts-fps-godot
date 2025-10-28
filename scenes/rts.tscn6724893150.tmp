@@ -1,0 +1,72 @@
+[gd_scene load_steps=13 format=3 uid="uid://bo4alqq10e4wb"]
+
+[ext_resource type="PackedScene" uid="uid://cf7brgwaxlmud" path="res://addons/3d_rts_camera/rtscam.tscn" id="1_coxth"]
+[ext_resource type="Script" uid="uid://jk4piq7hpiow" path="res://scripts/game_manager.gd" id="1_dsjwe"]
+[ext_resource type="Script" uid="uid://06ac57g80glq" path="res://scripts/flow_field_3d.gd" id="3_7jm3t"]
+[ext_resource type="Script" uid="uid://dmmcwcoij4mw6" path="res://scripts/selection_box_ui.gd" id="4_dsjwe"]
+[ext_resource type="Material" uid="uid://btcskr40i5w81" path="res://materials/soil.tres" id="5_wvw1b"]
+[ext_resource type="PackedScene" uid="uid://dmf78be6yh1it" path="res://scenes/unit.tscn" id="6_c220y"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_coxth"]
+
+[sub_resource type="Sky" id="Sky_7jm3t"]
+sky_material = SubResource("ProceduralSkyMaterial_coxth")
+
+[sub_resource type="Environment" id="Environment_coxth"]
+background_mode = 2
+background_color = Color(0.08771039, 0.16241324, 0.36877948, 1)
+sky = SubResource("Sky_7jm3t")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dsjwe"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_dsjwe"]
+material = SubResource("StandardMaterial3D_dsjwe")
+size = Vector2(300, 300)
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_dsjwe"]
+points = PackedVector3Array(-150, 0, -150, -150, 0, 150, 150, 0, -150, 150, 0, 150)
+
+[node name="RTS" type="Node3D"]
+script = ExtResource("1_dsjwe")
+unit_scene = ExtResource("6_c220y")
+ground_layer = 5
+unit_layer = 5
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.8660254, 0.5, 0, -0.5, 0.8660254, 0, 3, 0)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_coxth")
+
+[node name="FlowField3D" type="Node3D" parent="."]
+script = ExtResource("3_7jm3t")
+
+[node name="SelectionUILayer" type="CanvasLayer" parent="."]
+
+[node name="SelectionBoxUI" type="Control" parent="SelectionUILayer"]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("4_dsjwe")
+
+[node name="Unit" parent="." instance=ExtResource("6_c220y")]
+move_speed = null
+rotation_speed = null
+arrival_distance = null
+ground_check_distance = null
+
+[node name="Ground" type="MeshInstance3D" parent="."]
+material_override = ExtResource("5_wvw1b")
+mesh = SubResource("PlaneMesh_dsjwe")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="Ground"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Ground/StaticBody3D"]
+shape = SubResource("ConvexPolygonShape3D_dsjwe")
+
+[node name="RTScamera" parent="." instance=ExtResource("1_coxth")]
+
+[node name="CSGBox3D" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19.61192, 1.5316772, 9.113251)
+size = Vector3(5.145508, 4.0633545, 1)
