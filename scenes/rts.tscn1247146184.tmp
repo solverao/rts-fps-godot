@@ -1,10 +1,10 @@
 [gd_scene load_steps=16 format=3 uid="uid://bo4alqq10e4wb"]
 
+[ext_resource type="PackedScene" uid="uid://cf7brgwaxlmud" path="res://addons/3d_rts_camera/rtscam.tscn" id="1_coxth"]
 [ext_resource type="Script" uid="uid://jk4piq7hpiow" path="res://scripts/game_manager.gd" id="1_dsjwe"]
 [ext_resource type="Script" uid="uid://06ac57g80glq" path="res://scripts/flow_field_3d.gd" id="3_7jm3t"]
 [ext_resource type="Script" uid="uid://dmmcwcoij4mw6" path="res://scripts/selection_box_ui.gd" id="4_dsjwe"]
 [ext_resource type="Material" uid="uid://btcskr40i5w81" path="res://materials/soil.tres" id="5_wvw1b"]
-[ext_resource type="PackedScene" uid="uid://df6kql5gmnoa2" path="res://scenes/game_manager.tscn" id="6_aqx2a"]
 [ext_resource type="PackedScene" uid="uid://dmf78be6yh1it" path="res://scenes/unit.tscn" id="6_c220y"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_coxth"]
@@ -40,7 +40,6 @@ script = ExtResource("1_dsjwe")
 unit_scene = ExtResource("6_c220y")
 ground_layer = 5
 unit_layer = 5
-initial_unit_count = 100
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 0.8660254, 0.5, 0, -0.5, 0.8660254, 0, 3, 0)
@@ -49,7 +48,10 @@ transform = Transform3D(1, 0, 0, 0, 0.8660254, 0.5, 0, -0.5, 0.8660254, 0, 3, 0)
 environment = SubResource("Environment_coxth")
 
 [node name="FlowField3D" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -70, 0, -70)
 script = ExtResource("3_7jm3t")
+grid_width = 100
+grid_depth = 100
 
 [node name="SelectionUILayer" type="CanvasLayer" parent="."]
 
@@ -71,6 +73,8 @@ collision_mask = 0
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Ground/StaticBody3D"]
 shape = SubResource("ConvexPolygonShape3D_dsjwe")
 
+[node name="RTScamera" parent="." instance=ExtResource("1_coxth")]
+
 [node name="MeshInstance3D" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24.904242, 0, 30.687881)
 mesh = SubResource("BoxMesh_aqx2a")
@@ -81,5 +85,3 @@ collision_mask = 0
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="MeshInstance3D/StaticBody3D"]
 shape = SubResource("ConvexPolygonShape3D_c220y")
-
-[node name="GameManager" parent="." instance=ExtResource("6_aqx2a")]
