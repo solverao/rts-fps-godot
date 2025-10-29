@@ -173,18 +173,20 @@ func generate_flow_field(target_world_pos: Vector3) -> void:
 		_update_debug_visualization()
 
 
+## Calcula el costo acumulado desde cada celda hasta la celda objetivo (target).
+## Utiliza un algoritmo de búsqueda en anchura (similar a Dijkstra) para propagar los costos.
 func _generate_integration_field(target: Vector2i) -> void:
 	var open_list: Array[Vector2i] = [target]
 	var target_idx := _get_index(target)
 	integration_field[target_idx] = 0
 	
 	while open_list.size() > 0:
-		var current : Variant = open_list.pop_front()
+		var current: Vector2i = open_list.pop_front() # Nota: Corregido a Vector2i
 		var current_idx := _get_index(current)
 		var current_cost := integration_field[current_idx]
 		
 		for dir in DIRECTIONS:
-			var neighbor : Variant = current + dir
+			var neighbor: Vector2i = current + dir # Nota: Corregido a Vector2i
 			if not is_valid_cell(neighbor):
 				continue
 			
@@ -192,42 +194,90 @@ func _generate_integration_field(target: Vector2i) -> void:
 			
 			if cost_field[neighbor_idx] == INF:
 				continue
+
+			# --- INICIO DEL CÓDIGO INTEGRADO ---
 			
-			var new_cost := current_cost + cost_field[neighbor_idx]
+			# Obtenemos el costo base del terreno (que normalmente es 1)
+			var cost_to_neighbor := cost_field[neighbor_idx]
+
+			# Calculamos el ángulo desde el 'target' (objetivo) a la 'vecina' (neighbor)
+			var angle = Vector2(target).angle_to_point(Vector2(neighbor))
+			
+			# Comparamos el ángulo con el ángulo "snap" más cercano a 90 grados (PI/2).
+			# PI / 12 equivale a 15 grados.
+			# Si la diferencia es mayor a 15 grados, significa que NO es un movimiento
+			# puramente cardinal (recto).
+			if abs(angle - snappedf(angle, PI / 2.0)) > PI / 12.0:
+				# Si no es un movimiento recto, le añadimos un costo extra.
+				cost_to_neighbor += 1
+
+			# Calculamos el nuevo costo usando el costo modificado
+			var new_cost := current_cost + cost_to_neighbor
+			
+			# --- FIN DEL CÓDIGO INTEGRADO ---
 			
 			if new_cost < integration_field[neighbor_idx]:
 				integration_field[neighbor_idx] = new_cost
 				open_list.append(neighbor)
 
 
+## Genera los vectores de dirección para cada celda del grid basándose en el campo de integración.
 func _generate_flow_directions() -> void:
+	# 1. Itera sobre cada fila del grid (coordenada Z).
 	for z in range(grid_depth):
+		# 2. Itera sobre cada columna del grid (coordenada X).
 		for x in range(grid_width):
+			# 3. Calcula el índice 1D correspondiente a la coordenada (x, z).
 			var idx := z * grid_width + x
 			
+			# 4. Si la celda actual es un obstáculo...
 			if cost_field[idx] == INF:
+				# 5. ...asigna un vector nulo (sin movimiento) y...
 				flow_field[idx] = Vector3.ZERO
+				# 6. ...salta a la siguiente celda del bucle.
 				continue
 			
+			# 7. Crea una variable 'current' con la posición 2D de la celda actual.
 			var current := Vector2i(x, z)
+			
+			# 8. 'best_dir' almacenará la dirección hacia la mejor vecina (la más barata).
+			#    Se inicializa a un vector cero.
 			var best_dir := Vector2.ZERO
+			
+			# 9. 'lowest' almacenará el costo de la mejor vecina encontrada hasta ahora.
+			#    Se inicializa con el costo de la PROPIA celda actual.
 			var lowest := integration_field[idx]
 			
+			# 10. Itera a través de las 8 direcciones para encontrar las celdas vecinas.
 			for dir in DIRECTIONS:
+				# 11. Calcula la posición de la celda vecina.
 				var neighbor := current + dir
+				
+				# 12. Si la vecina está fuera del grid, la ignora y continúa.
 				if not is_valid_cell(neighbor):
 					continue
 				
+				# 13. Obtiene el índice de la vecina.
 				var neighbor_idx := _get_index(neighbor)
+				# 14. Obtiene el costo de integración de la vecina.
 				var neighbor_cost := integration_field[neighbor_idx]
 				
+				# 15. Compara: si el costo de esta vecina es menor que el más bajo que hemos encontrado...
 				if neighbor_cost < lowest:
+					# 16. ...actualiza 'lowest' con este nuevo costo más bajo.
 					lowest = neighbor_cost
+					# 17. ...y guarda la dirección ('dir') que nos llevó a esta mejor vecina.
 					best_dir = Vector2(dir)
 			
+			# 18. Después de revisar todas las vecinas, si 'best_dir' ya no es un vector cero...
+			#     (es decir, si encontramos una vecina con un costo menor).
 			if best_dir.length_squared() > 0:
+				# 19. ...convierte la dirección 2D a un vector 3D (Y=0), normalízalo (para que solo
+				#     represente dirección, no magnitud) y guárdalo en el flow_field.
 				flow_field[idx] = Vector3(best_dir.x, 0, best_dir.y).normalized()
 			else:
+				# 20. Si no se encontró ninguna vecina mejor (estamos en un mínimo local o una meseta),
+				#     asigna un vector de movimiento nulo.
 				flow_field[idx] = Vector3.ZERO
 
 

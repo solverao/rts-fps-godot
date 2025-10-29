@@ -68,7 +68,7 @@ func _spawn_units() -> void:
 		add_child(unit)
 		
 		var col := i % spawn_grid_columns
-		var row := i / spawn_grid_columns
+		var row : int = i / spawn_grid_columns
 		
 		var spawn_pos := spawn_start_position + Vector3(
 			col * spawn_spacing,
