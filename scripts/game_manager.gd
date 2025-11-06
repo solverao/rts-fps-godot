@@ -14,7 +14,7 @@ extends Node3D
 @export_flags_3d_physics var unit_layer: int = 2
 
 @export_group("Unit Spawning")
-@export_range(1, 100) var initial_unit_count: int = 20
+@export_range(1, 10000) var initial_unit_count: int = 20
 @export var spawn_grid_columns: int = 4
 @export var spawn_spacing: float = 3.0
 @export var spawn_start_position: Vector3 = Vector3(5, 1, 5)
@@ -56,6 +56,7 @@ func _setup_obstacles() -> void:
 	
 	# Áreas de terreno difícil
 	flow_field.set_cost_area(Vector3(30, 0, 30), 5, 3)
+	flow_field.set_cost_area(Vector3(500, 0, 500), 16, 3)
 
 
 func _spawn_units() -> void:

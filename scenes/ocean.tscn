@@ -1,0 +1,27 @@
+[gd_scene load_steps=6 format=3 uid="uid://c3seudtk73547"]
+
+[ext_resource type="Material" uid="uid://c33xjw7ihr0dx" path="res://materials/toon_water_shader_material.tres" id="1_a1ohp"]
+[ext_resource type="Script" uid="uid://bujy52tg625fd" path="res://scripts/ocean.gd" id="2_mrcdx"]
+[ext_resource type="PackedScene" uid="uid://cf7brgwaxlmud" path="res://addons/3d_rts_camera/rtscam.tscn" id="4_a1ohp"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_4bxra"]
+size = Vector2(30, 30)
+subdivide_width = 128
+subdivide_depth = 128
+
+[sub_resource type="Environment" id="Environment_mn261"]
+
+[node name="Ocean" type="MeshInstance3D"]
+material_override = ExtResource("1_a1ohp")
+mesh = SubResource("PlaneMesh_4bxra")
+script = ExtResource("2_mrcdx")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.6905038, 0.72332877, 0, -0.72332877, 0.6905038, 0, 0, 0)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_mn261")
+
+[node name="RTScamera" parent="." instance=ExtResource("4_a1ohp")]
+camera_zoom_speed = 50.0
+camera_zoom_min = 0.0

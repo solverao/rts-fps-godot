@@ -1,0 +1,10 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3 uid="uid://nculwt35oshu"]
+
+[ext_resource type="Shader" uid="uid://cjbkf2apeg5ym" path="res://shaders/olas_shader.gdshader" id="1_s8u4m"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_s8u4m")
+shader_parameter/amplitude = 0.3
+shader_parameter/frequency = 2.0
+shader_parameter/speed = 1.0

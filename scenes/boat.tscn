@@ -1,0 +1,31 @@
+[gd_scene load_steps=6 format=3 uid="uid://bj283jjlnwjak"]
+
+[ext_resource type="Script" uid="uid://dmsldekglin1l" path="res://scenes/character_body_3d.gd" id="1_0063d"]
+[ext_resource type="Material" uid="uid://btcskr40i5w81" path="res://materials/soil.tres" id="2_lw6pk"]
+[ext_resource type="Material" uid="uid://mpjmebac1fvj" path="res://materials/espuma_shader_material.tres" id="2_qyrje"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_fsggc"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_0063d"]
+size = Vector3(2, 1, 2)
+
+[node name="Boat" type="CharacterBody3D" node_paths=PackedStringArray("foam_particles", "wake_particles")]
+script = ExtResource("1_0063d")
+foam_particles = NodePath("FoamParticles")
+wake_particles = NodePath("WakeParticles")
+
+[node name="BoatMesh" type="MeshInstance3D" parent="."]
+material_override = ExtResource("2_lw6pk")
+mesh = SubResource("BoxMesh_fsggc")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_0063d")
+
+[node name="FoamParticles" type="GPUParticles3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2)
+amount = 80
+lifetime = 1.5
+process_material = ExtResource("2_qyrje")
+
+[node name="WakeParticles" type="GPUParticles3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.3, -2)

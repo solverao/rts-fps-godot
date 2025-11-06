@@ -1,0 +1,7 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3 uid="uid://d3g0t1gntecco"]
+
+[ext_resource type="Shader" uid="uid://caj7j2rpoayee" path="res://shaders/toon_shader.gdshader" id="1_sepuh"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_sepuh")

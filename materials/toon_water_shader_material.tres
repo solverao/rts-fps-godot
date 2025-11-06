@@ -1,0 +1,13 @@
+[gd_resource type="ShaderMaterial" load_steps=3 format=3 uid="uid://c33xjw7ihr0dx"]
+
+[ext_resource type="Shader" uid="uid://cweg7rf41w4ci" path="res://shaders/toon_water_shader.gdshader" id="1_ksgyv"]
+[ext_resource type="Texture2D" uid="uid://c88j3oj0lf6om" path="res://demo/assets/textures/rock023_alb_ht.png" id="2_7y1cq"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_ksgyv")
+shader_parameter/slide_speed = 0.3
+shader_parameter/wobble_speed = 1.0
+shader_parameter/wobble_intensity = 0.4
+shader_parameter/texture_scale = 0.2
+shader_parameter/water = ExtResource("2_7y1cq")

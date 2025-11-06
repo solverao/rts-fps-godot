@@ -16,7 +16,7 @@ class_name RTSUnit3D
 
 ## Configuración de detección de atasco
 @export_group("Stuck Detection")
-@export_range(0.1, 2.0, 0.05) var stuck_threshold: float = 0.5
+@export_range(0.1, 2.0, 0.05) var stuck_threshold: float = 1
 @export_range(0.5, 3.0, 0.1) var stuck_time_limit: float = 1.0
 
 ## Estado de la unidad

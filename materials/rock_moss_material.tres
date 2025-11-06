@@ -1,0 +1,14 @@
+[gd_resource type="ShaderMaterial" load_steps=4 format=3 uid="uid://bjic5axyn0fhf"]
+
+[ext_resource type="Shader" uid="uid://c3c52unt53kpk" path="res://shaders/rock_moss_shader.gdshader" id="1_m5uxb"]
+[ext_resource type="Texture2D" uid="uid://ddprscrpsofah" path="res://demo/assets/textures/ground037_alb_ht.png" id="2_r6l6i"]
+[ext_resource type="Texture2D" uid="uid://dghljwib1o2k6" path="res://descarga (1).jpeg" id="3_3q8tg"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_m5uxb")
+shader_parameter/texture_rock = ExtResource("3_3q8tg")
+shader_parameter/texture_moss = ExtResource("2_r6l6i")
+shader_parameter/scale = 1.0
+shader_parameter/blend_offset = 0.5
+shader_parameter/blend_sharpness = 0.1

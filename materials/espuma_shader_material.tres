@@ -1,0 +1,9 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3 uid="uid://mpjmebac1fvj"]
+
+[ext_resource type="Shader" uid="uid://dv8x4g71nomcp" path="res://shaders/espuma_shader.gdshader" id="1_hmaod"]
+
+[resource]
+shader = ExtResource("1_hmaod")
+shader_parameter/lifetime = 2.0
+shader_parameter/emission_box_extents = Vector3(0.5, 0.2, 0.5)
+shader_parameter/spread = 15.0

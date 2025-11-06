@@ -8,8 +8,8 @@ class_name FlowField3D
 ## Configuración del grid
 @export_group("Grid Configuration")
 @export_range(0.5, 5.0, 0.1) var cell_size: float = 2.0
-@export_range(10, 200, 5) var grid_width: int = 50
-@export_range(10, 200, 5) var grid_depth: int = 50
+@export_range(10, 2000, 5) var grid_width: int = 50
+@export_range(10, 2000, 5) var grid_depth: int = 50
 
 ## Configuración de visualización
 @export_group("Debug Visualization")

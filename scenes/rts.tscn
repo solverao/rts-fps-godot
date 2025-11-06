@@ -1,37 +1,98 @@
-[gd_scene load_steps=12 format=3 uid="uid://bo4alqq10e4wb"]
+[gd_scene load_steps=20 format=3 uid="uid://bo4alqq10e4wb"]
 
 [ext_resource type="Script" uid="uid://jk4piq7hpiow" path="res://scripts/game_manager.gd" id="1_dsjwe"]
 [ext_resource type="Script" uid="uid://06ac57g80glq" path="res://scripts/flow_field_3d.gd" id="3_7jm3t"]
 [ext_resource type="Script" uid="uid://dmmcwcoij4mw6" path="res://scripts/selection_box_ui.gd" id="4_dsjwe"]
-[ext_resource type="Material" uid="uid://btcskr40i5w81" path="res://materials/soil.tres" id="5_wvw1b"]
 [ext_resource type="PackedScene" uid="uid://df6kql5gmnoa2" path="res://scenes/game_manager.tscn" id="6_aqx2a"]
 [ext_resource type="PackedScene" uid="uid://dmf78be6yh1it" path="res://scenes/unit.tscn" id="6_c220y"]
 [ext_resource type="PackedScene" uid="uid://kdk0ahmldfkw" path="res://scenes/obstacle.tscn" id="7_aqx2a"]
 [ext_resource type="PackedScene" uid="uid://8pik13p682ub" path="res://scenes/environments.tscn" id="8_nr8xu"]
+[ext_resource type="Texture2D" uid="uid://ddprscrpsofah" path="res://demo/assets/textures/ground037_alb_ht.png" id="9_b4wjl"]
+[ext_resource type="Texture2D" uid="uid://c1ots7w6i0i1q" path="res://demo/assets/textures/ground037_nrm_rgh.png" id="10_gmy1u"]
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_aqx2a"]
-size = Vector3(1000, 1, 1000)
+[sub_resource type="Gradient" id="Gradient_nr8xu"]
+offsets = PackedFloat32Array(0.2, 1)
+colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 1)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nr8xu"]
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_q3x8o"]
+noise_type = 2
+frequency = 0.03
+cellular_jitter = 3.0
+cellular_return_type = 0
+domain_warp_enabled = true
+domain_warp_type = 1
+domain_warp_amplitude = 50.0
+domain_warp_fractal_type = 2
+domain_warp_fractal_lacunarity = 1.5
+domain_warp_fractal_gain = 1.0
 
-[sub_resource type="PlaneMesh" id="PlaneMesh_q3x8o"]
-material = SubResource("StandardMaterial3D_nr8xu")
-size = Vector2(1000, 1000)
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_b4wjl"]
+noise = SubResource("FastNoiseLite_q3x8o")
+color_ramp = SubResource("Gradient_nr8xu")
+seamless = true
+
+[sub_resource type="Terrain3DMaterial" id="Terrain3DMaterial_gmy1u"]
+_shader_parameters = {
+&"bias_distance": 512.0,
+&"blend_sharpness": 0.5,
+&"depth_blur": 0.0,
+&"enable_macro_variation": true,
+&"enable_projection": true,
+&"flat_terrain_normals": false,
+&"macro_variation1": Color(1, 1, 1, 1),
+&"macro_variation2": Color(1, 1, 1, 1),
+&"macro_variation_slope": 0.333,
+&"mipmap_bias": 1.0,
+&"noise1_angle": 0.0,
+&"noise1_offset": Vector2(0.5, 0.5),
+&"noise1_scale": 0.04,
+&"noise2_scale": 0.076,
+&"noise_texture": SubResource("NoiseTexture2D_b4wjl"),
+&"projection_threshold": 0.8
+}
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_de0mt"]
+transparency = 4
+cull_mode = 2
+vertex_color_use_as_albedo = true
+backlight_enabled = true
+backlight = Color(0.5, 0.5, 0.5, 1)
+distance_fade_mode = 1
+distance_fade_min_distance = 128.0
+distance_fade_max_distance = 96.0
+
+[sub_resource type="Terrain3DMeshAsset" id="Terrain3DMeshAsset_imthp"]
+generated_type = 1
+height_offset = 0.5
+material_override = SubResource("StandardMaterial3D_de0mt")
+last_lod = 0
+last_shadow_lod = 0
+lod0_range = 128.0
+
+[sub_resource type="Terrain3DTextureAsset" id="Terrain3DTextureAsset_de0mt"]
+name = "ground037_alb_ht"
+albedo_texture = ExtResource("9_b4wjl")
+normal_texture = ExtResource("10_gmy1u")
+
+[sub_resource type="Terrain3DAssets" id="Terrain3DAssets_rvql4"]
+mesh_list = Array[Terrain3DMeshAsset]([SubResource("Terrain3DMeshAsset_imthp")])
+texture_list = Array[Terrain3DTextureAsset]([SubResource("Terrain3DTextureAsset_de0mt")])
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_q3x8o"]
+
+[sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_q3x8o"]
 
 [node name="RTS" type="Node3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.04479, -1.5085063, 5.409382)
 script = ExtResource("1_dsjwe")
 unit_scene = ExtResource("6_c220y")
 ground_layer = 5
 unit_layer = 5
-initial_unit_count = 100
 
 [node name="FlowField3D" type="Node3D" parent="."]
 script = ExtResource("3_7jm3t")
-grid_width = 200
-grid_depth = 200
 
 [node name="SelectionUILayer" type="CanvasLayer" parent="."]
-visible = false
 
 [node name="SelectionBoxUI" type="Control" parent="SelectionUILayer"]
 layout_mode = 3
@@ -51,13 +112,28 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 28, 0, 43)
 [node name="Obstacle2" parent="Obstacle" instance=ExtResource("7_aqx2a")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 88, 0, 25)
 
+[node name="Obstacle3" parent="Obstacle" instance=ExtResource("7_aqx2a")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20.877316, 0, 60.513657)
+
+[node name="Obstacle" parent="Obstacle/Obstacle3" instance=ExtResource("7_aqx2a")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 28, 0, 43)
+
+[node name="Obstacle2" parent="Obstacle/Obstacle3" instance=ExtResource("7_aqx2a")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 88, 0, 25)
+
 [node name="Environments" parent="." instance=ExtResource("8_nr8xu")]
 
-[node name="StaticBody3D" type="StaticBody3D" parent="."]
+[node name="Terrain3D" type="Terrain3D" parent="."]
+data_directory = "res://scenes"
+material = SubResource("Terrain3DMaterial_gmy1u")
+assets = SubResource("Terrain3DAssets_rvql4")
+collision_shape_size = 64
+collision_radius = 96
+physics_material = SubResource("PhysicsMaterial_q3x8o")
+top_level = true
+metadata/_edit_lock_ = true
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D"]
-shape = SubResource("BoxShape3D_aqx2a")
+[node name="StaticBody3D" type="StaticBody3D" parent="Terrain3D"]
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="StaticBody3D"]
-material_override = ExtResource("5_wvw1b")
-mesh = SubResource("PlaneMesh_q3x8o")
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Terrain3D/StaticBody3D"]
+shape = SubResource("WorldBoundaryShape3D_q3x8o")

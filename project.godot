@@ -15,6 +15,14 @@ run/main_scene="uid://052dtx712xl6"
 config/features=PackedStringArray("4.5", "GL Compatibility")
 config/icon="res://icon.svg"
 
+[autoload]
+
+OceanManager="*res://scripts/managers/ocean_manager.gd"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/terrain_3d/plugin.cfg")
+
 [input]
 
 ui_left={
