@@ -1,11 +1,10 @@
 [gd_scene load_steps=4 format=3 uid="uid://kdk0ahmldfkw"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3xr6u"]
-albedo_color = Color(0.346496, 0.20135868, 0.08183848, 1)
+[ext_resource type="Material" uid="uid://bjic5axyn0fhf" path="res://materials/rock_moss_material.tres" id="1_7ukg5"]
 
-[sub_resource type="BoxMesh" id="BoxMesh_7ukg5"]
-material = SubResource("StandardMaterial3D_3xr6u")
-size = Vector3(9, 9, 9)
+[sub_resource type="SphereMesh" id="SphereMesh_drdry"]
+radius = 5.0
+height = 5.0
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_7ukg5"]
 size = Vector3(9, 9, 9)
@@ -13,7 +12,8 @@ size = Vector3(9, 9, 9)
 [node name="Obstacle" type="StaticBody3D"]
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="."]
-mesh = SubResource("BoxMesh_7ukg5")
+material_override = ExtResource("1_7ukg5")
+mesh = SubResource("SphereMesh_drdry")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.042651176, 0, 0)

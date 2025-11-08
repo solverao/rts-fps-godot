@@ -1,7 +1,7 @@
 [gd_resource type="ShaderMaterial" load_steps=4 format=3 uid="uid://bjic5axyn0fhf"]
 
 [ext_resource type="Shader" uid="uid://c3c52unt53kpk" path="res://shaders/rock_moss_shader.gdshader" id="1_m5uxb"]
-[ext_resource type="Texture2D" uid="uid://ddprscrpsofah" path="res://demo/assets/textures/ground037_alb_ht.png" id="2_r6l6i"]
+[ext_resource type="Texture2D" uid="uid://d05mpssjplr38" path="res://moss-4930309_1280.jpg" id="2_r6l6i"]
 [ext_resource type="Texture2D" uid="uid://dghljwib1o2k6" path="res://descarga (1).jpeg" id="3_3q8tg"]
 
 [resource]

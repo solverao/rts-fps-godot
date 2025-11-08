@@ -104,7 +104,7 @@ script = ExtResource("4_dsjwe")
 [node name="GameManager" parent="." instance=ExtResource("6_aqx2a")]
 
 [node name="Obstacle" parent="." instance=ExtResource("7_aqx2a")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 42.42417, 0, 18.31829)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 42.42417, 1.4489994, 18.31829)
 
 [node name="Obstacle" parent="Obstacle" instance=ExtResource("7_aqx2a")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 28, 0, 43)
