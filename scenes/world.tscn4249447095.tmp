@@ -1,0 +1,30 @@
+[gd_scene load_steps=6 format=3 uid="uid://b20gpggjpay8a"]
+
+[ext_resource type="Script" uid="uid://c48nm5pmpil8g" path="res://world_generator.gd" id="1_nnsk1"]
+[ext_resource type="PackedScene" uid="uid://domhm87hbhbg1" path="res://demo/components/Player.tscn" id="2_rwgxs"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_nnsk1"]
+
+[sub_resource type="Sky" id="Sky_rwgxs"]
+sky_material = SubResource("ProceduralSkyMaterial_nnsk1")
+
+[sub_resource type="Environment" id="Environment_4wyf3"]
+background_mode = 2
+sky = SubResource("Sky_rwgxs")
+
+[node name="World" type="Node3D" node_paths=PackedStringArray("player")]
+script = ExtResource("1_nnsk1")
+render_distance = 12
+height_multiplier = 600.0
+noise_frequency = 0.005
+player = NodePath("Player")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.7047705, 0.70943546, 0, -0.70943546, 0.7047705, 0, 1.7052004, 0)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_4wyf3")
+
+[node name="Player" parent="." instance=ExtResource("2_rwgxs")]

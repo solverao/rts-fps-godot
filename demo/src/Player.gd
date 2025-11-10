@@ -1,5 +1,9 @@
 extends CharacterBody3D
 
+var debug_timer = 0.0
+
+@export var terrain: TerrainChunkSystem 
+
 @export var MOVE_SPEED: float = 50.0
 @export var JUMP_SPEED: float = 2.0
 @export var first_person: bool = false : 
@@ -36,6 +40,23 @@ func _physics_process(p_delta) -> void:
 	if gravity_enabled:
 		velocity.y -= 40 * p_delta
 	move_and_slide()
+	
+	# Debug de biomas cada 0.5 segundos
+	debug_timer += p_delta
+	if terrain and debug_timer >= 0.5:
+		debug_timer = 0.0
+		
+		var biome = terrain.get_biome_at_position(global_position)
+		var biome_val = terrain.get_biome_value_at_position(global_position)
+		var height = terrain.get_height_at_position(global_position)
+		
+		print("Pos: %.1f,%.1f | Bioma: %s (val: %.3f) | Altura: %.1f" % [
+			global_position.x, 
+			global_position.z, 
+			biome, 
+			biome_val, 
+			height
+		])
 
 
 # Returns the input vector relative to the camera. Forward is always the direction the camera is facing

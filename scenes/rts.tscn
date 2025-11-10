@@ -140,4 +140,4 @@ metadata/_edit_lock_ = true
 shape = SubResource("WorldBoundaryShape3D_q3x8o")
 
 [node name="Tree_L" parent="." instance=ExtResource("10_b4wjl")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.6804905, 1.4489994, 18.31829)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.692402, 1.4489994, -1.4276505)
