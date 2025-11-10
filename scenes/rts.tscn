@@ -1,4 +1,4 @@
-[gd_scene load_steps=20 format=3 uid="uid://bo4alqq10e4wb"]
+[gd_scene load_steps=21 format=3 uid="uid://bo4alqq10e4wb"]
 
 [ext_resource type="Script" uid="uid://jk4piq7hpiow" path="res://scripts/game_manager.gd" id="1_dsjwe"]
 [ext_resource type="Script" uid="uid://06ac57g80glq" path="res://scripts/flow_field_3d.gd" id="3_7jm3t"]
@@ -8,6 +8,7 @@
 [ext_resource type="PackedScene" uid="uid://kdk0ahmldfkw" path="res://scenes/obstacle.tscn" id="7_aqx2a"]
 [ext_resource type="PackedScene" uid="uid://8pik13p682ub" path="res://scenes/environments.tscn" id="8_nr8xu"]
 [ext_resource type="Texture2D" uid="uid://ddprscrpsofah" path="res://demo/assets/textures/ground037_alb_ht.png" id="9_b4wjl"]
+[ext_resource type="PackedScene" uid="uid://cryek571tjarh" path="res://scenes/tree_l.tscn" id="10_b4wjl"]
 [ext_resource type="Texture2D" uid="uid://c1ots7w6i0i1q" path="res://demo/assets/textures/ground037_nrm_rgh.png" id="10_gmy1u"]
 
 [sub_resource type="Gradient" id="Gradient_nr8xu"]
@@ -137,3 +138,6 @@ metadata/_edit_lock_ = true
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Terrain3D/StaticBody3D"]
 shape = SubResource("WorldBoundaryShape3D_q3x8o")
+
+[node name="Tree_L" parent="." instance=ExtResource("10_b4wjl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.6804905, 1.4489994, 18.31829)
