@@ -51,7 +51,7 @@ var last_player_chunk: Vector2i = Vector2i.MAX
 var update_timer: float = 0.0
 
 # Material compartido (optimización)
-var shared_material: StandardMaterial3D
+var shared_material: ShaderMaterial
 
 # Clase interna para definir biomas
 # Clase interna para definir biomas
@@ -199,7 +199,7 @@ func setup_biomes():
 	# Núcleo: [0.4, 1.0]
 	# Total (con blend): [0.25, 1.0]
 	biomes.append(BiomeData.new(
-		"Montañas", 35.0, 6, 0.02,
+		"Montañas", 65.0, 6, 0.02,
 		0.4,	 # min_core
 		1.0,	 # max_core
 		blend_amount,
@@ -215,20 +215,44 @@ func setup_biomes():
 	# y entre [0.25, 0.45] (Colinas y Montañas se mezclan)
 	
 func setup_material():
-	shared_material = StandardMaterial3D.new()
-	shared_material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
-	shared_material.roughness = roughness
-	shared_material.metallic = 0.0
-	shared_material.cull_mode = BaseMaterial3D.CULL_BACK
-	
-	# Habilitar vertex colors si los biomas están activos
-	if enable_biomes:
-		shared_material.vertex_color_use_as_albedo = true
-		shared_material.albedo_color = Color.WHITE  # Blanco para que los vertex colors se vean
-	else:
-		shared_material.albedo_color = terrain_color
-		shared_material.vertex_color_use_as_albedo = false
+	# 1. Cargar el recurso de shader que acabamos de crear
+	var shader = load("res://terrain_splatmap.gdshader")
+	if shader == null:
+		push_error("No se pudo cargar 'res://terrain_splatmap.gdshader'")
+		return
+		
+	# 2. Cargar tus texturas (¡DEBES CAMBIAR ESTAS RUTAS!)
+	# ¡Asegúrate de que tus texturas tengan "Repeat" habilitado en la pestaña Importar!
+	var tex_grass = load("res://textures/grass.jpg") # REEMPLAZA ESTA RUTA
+	var tex_rock = load("res://textures/rock.jpg")   # REEMPLAZA ESTA RUTA
+	var tex_sand = load("res://textures/sand.jpg")   # REEMPLAZA ESTA RUTA
 
+	# (Opcional) Cargar texturas por defecto si no encuentras las tuyas
+	if tex_grass == null: tex_grass = Texture2D.new() # Evita que crashee
+	if tex_rock == null: tex_rock = Texture2D.new()
+	if tex_sand == null: tex_sand = Texture2D.new()
+	
+	# 3. Crear el ShaderMaterial
+	shared_material = ShaderMaterial.new()
+	shared_material.shader = shader
+	
+	# 4. Asignar las texturas a los 'uniforms' del shader
+	# (Los nombres "tex_grass" deben coincidir con los del shader)
+	shared_material.set_shader_parameter("tex_grass", tex_grass)
+	shared_material.set_shader_parameter("tex_rock", tex_rock)
+	shared_material.set_shader_parameter("tex_sand", tex_sand)
+	
+	# 5. Configurar otros parámetros iniciales (puedes ajustarlos en el Inspector)
+	shared_material.set_shader_parameter("uv_scale", 10.0)
+	shared_material.set_shader_parameter("slope_sharpness", 12.0)
+	shared_material.set_shader_parameter("sand_height", 2.5)
+	shared_material.set_shader_parameter("sand_blend_range", 3.0)
+
+	# NOTA: Ya no necesitamos las viejas configuraciones como:
+	# shared_material.vertex_color_use_as_albedo = true
+	# shared_material.albedo_color = terrain_color
+	# ¡El shader se encarga de todo!
+	
 func update_chunks():
 	if player == null:
 		return
