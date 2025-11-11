@@ -20,7 +20,7 @@ class_name TerrainChunkSystem
 @export_group("Biome Settings")
 @export var enable_biomes: bool = false
 @export var biome_scale: float = 0.001  # Escala del ruido de biomas (más bajo = biomas más grandes)
-@export var biome_blend_distance: float = 10.0  # Distancia de transición entre biomas
+@export var biome_blend_distance: float = 0.15  # Distancia de transición entre biomas
 
 @export_group("Visual Settings")
 @export var terrain_color: Color = Color(0.45, 0.38, 0.28)
@@ -54,26 +54,56 @@ var update_timer: float = 0.0
 var shared_material: StandardMaterial3D
 
 # Clase interna para definir biomas
+# Clase interna para definir biomas
 class BiomeData:
 	var name: String
 	var height_multiplier: float
 	var octaves: int
 	var frequency: float
-	var min_threshold: float  # Valor mínimo del ruido de bioma
-	var max_threshold: float  # Valor máximo del ruido de bioma
+	var min_core: float	 # Dónde empieza el "núcleo" (peso 1.0)
+	var max_core: float	 # Dónde termina el "núcleo" (peso 1.0)
+	var blend_range: float # Cuánto se difumina MÁS ALLÁ del núcleo
 	var color: Color
 	
-	func _init(p_name: String, p_height: float, p_octaves: int, p_freq: float, p_min: float, p_max: float, p_color: Color = Color.WHITE):
+	func _init(p_name: String, p_height: float, p_octaves: int, p_freq: float, p_min_core: float, p_max_core: float, p_blend: float, p_color: Color = Color.WHITE):
 		name = p_name
 		height_multiplier = p_height
 		octaves = p_octaves
 		frequency = p_freq
-		min_threshold = p_min
-		max_threshold = p_max
+		min_core = p_min_core
+		max_core = p_max_core
+		blend_range = p_blend
 		color = p_color
 	
-	func matches(biome_value: float) -> bool:
-		return biome_value >= min_threshold and biome_value < max_threshold
+	# La vieja función 'matches' ya no es necesaria
+	# func matches(biome_value: float) -> bool: ...
+
+	# NUEVA FUNCIÓN para calcular el peso (de 0.0 a 1.0)
+	func get_weight(biome_value: float) -> float:
+		# 1. Calcular los límites totales del bioma (núcleo + difuminado)
+		# Nota: nos aseguramos de no pasarnos de -1.0 o 1.0
+		var min_total = max(min_core - blend_range, -1.0)
+		var max_total = min(max_core + blend_range, 1.0)
+
+		# 2. Si está fuera del rango total, el peso es 0
+		if biome_value < min_total or biome_value > max_total:
+			return 0.0
+
+		# 3. Si está dentro del núcleo, el peso es 1
+		if biome_value >= min_core and biome_value <= max_core:
+			return 1.0
+			
+		# 4. Si está en la zona de difuminado de entrada (izquierda)
+		if biome_value < min_core:
+			# smoothstep(edge0, edge1, x) -> Interpola suavemente de 0 a 1 cuando x va de edge0 a edge1
+			return smoothstep(min_total, min_core, biome_value)
+			
+		# 5. Si está en la zona de difuminado de salida (derecha)
+		if biome_value > max_core:
+			# Invertimos la lógica: va de 1 (en max_core) a 0 (en max_total)
+			return 1.0 - smoothstep(max_core, max_total, biome_value)
+			
+		return 0.0 # No debería llegar aquí
 
 # Clase interna para datos del chunk
 class ChunkData:
@@ -133,42 +163,57 @@ func setup_noise():
 	biome_noise.cellular_distance_function = FastNoiseLite.DISTANCE_EUCLIDEAN
 
 func setup_biomes():
-	"""Configura los biomas predefinidos"""
+	"""Configura los biomas predefinidos CON TRANSICIONES SUAVES"""
 	biomes.clear()
 	
-# Bioma 1: Llanuras (Rango: 0.6 de ancho)
+	# Este es el valor clave: cuánto se difumina cada bioma (en espacio de ruido)
+	# Un valor más alto = transiciones más largas y suaves.
+	# ¡Tu variable @export biome_blend_distance = 10.0 NO sirve aquí!
+	# Te sugiero borrar esa variable y usar este valor, o cambiar
+	# el valor por defecto de tu @export a 0.15.
+	var blend_amount: float = biome_blend_distance
+
+	# Bioma 1: Llanuras
+	# Núcleo: [-1.0, -0.4]
+	# Total (con blend): [-1.0, -0.25]
 	biomes.append(BiomeData.new(
-		"Llanuras",
-		2.0,      # Altura
-		1,        # Octavas
-		0.1,      # Frecuencia
-		-1.0,     # min_threshold
-		-0.4,     # max_threshold (ANTES ERA -0.2)
+		"Llanuras", 2.0, 1, 0.1,
+		-1.0,	 # min_core
+		-0.4,	 # max_core
+		blend_amount,
 		Color(0.4, 0.7, 0.3)
 	))
 	
-	# Bioma 2: Colinas (Rango: 0.7 de ancho)
+	# Bioma 2: Colinas
+	# Núcleo: [-0.3, 0.3]
+	# Total (con blend): [-0.45, 0.45]
 	biomes.append(BiomeData.new(
-		"Colinas",
-		12.0,     # Altura
-		3,        # Octavas
-		0.04,     # Frecuencia
-		-0.4,     # min_threshold (ANTES ERA -0.2)
-		0.3,      # max_threshold (ANTES ERA 0.4)
+		"Colinas", 12.0, 3, 0.04,
+		-0.3,	 # min_core
+		0.3,	 # max_core
+		blend_amount,
 		Color(0.35, 0.5, 0.25)
 	))
 	
-	# Bioma 3: Montañas (Rango: 0.7 de ancho)
+	# Bioma 3: Montañas
+	# Núcleo: [0.4, 1.0]
+	# Total (con blend): [0.25, 1.0]
 	biomes.append(BiomeData.new(
-		"Montañas",
-		35.0,     # Altura
-		6,        # Octavas
-		0.02,     # Frecuencia
-		0.3,      # min_threshold (ANTES ERA 0.4)
-		1.0,      # max_threshold
+		"Montañas", 35.0, 6, 0.02,
+		0.4,	 # min_core
+		1.0,	 # max_core
+		blend_amount,
 		Color(0.5, 0.4, 0.35)
 	))
-
+	
+	# NOTA DE CÓMO FUNCIONA:
+	# Llanuras (total) = [-1.0, -0.25]
+	# Colinas (total)  = [-0.45, 0.45]
+	# Montañas (total) = [0.25, 1.0]
+	#
+	# Hay solapamiento entre [-0.45, -0.25] (Llanuras y Colinas se mezclan)
+	# y entre [0.25, 0.45] (Colinas y Montañas se mezclan)
+	
 func setup_material():
 	shared_material = StandardMaterial3D.new()
 	shared_material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
@@ -421,35 +466,31 @@ func get_height_at_position(world_pos: Vector3) -> float:
 
 func get_biome_height(world_x: float, world_z: float) -> Dictionary:
 	"""Calcula la altura y color basándose en biomas con transiciones suaves"""
-	# Usar coordenadas directas para el ruido de biomas
-	var biome_value = biome_noise.get_noise_2d(world_x, world_z)
+	# Esta línea ya la corregimos en la respuesta anterior
+	var biome_value = biome_noise.get_noise_2d(world_x, world_z) 
 	
-	# Encontrar biomas adyacentes para hacer blend
 	var blend_weights: Array = []
 	var total_weight: float = 0.0
 	
+	# 1. Obtener el peso de CADA bioma
 	for biome in biomes:
-		if biome.matches(biome_value):
-			# Calcular peso basado en distancia al centro del rango del bioma
-			var biome_center = (biome.min_threshold + biome.max_threshold) / 2.0
-			var distance_to_center = abs(biome_value - biome_center)
-			var biome_range = (biome.max_threshold - biome.min_threshold) / 2.0
-			
-			# Peso más alto cerca del centro del bioma
-			var weight = 1.0 - clamp(distance_to_center / biome_range, 0.0, 1.0)
+		var weight = biome.get_weight(biome_value)
+		if weight > 0.0:
 			blend_weights.append({"biome": biome, "weight": weight})
 			total_weight += weight
 	
-	# Si no encontramos bioma, usar valores por defecto
-	if blend_weights.is_empty():
+	# 2. Si no encontramos bioma (total_weight es 0), usar valores por defecto
+	if blend_weights.is_empty() or total_weight <= 0.0:
 		var noise_value = noise.get_noise_2d(world_x, world_z)
 		return {"height": noise_value * height_multiplier, "color": terrain_color}
 	
-	# Normalizar pesos
+	# 3. Normalizar pesos (dividir por el total)
+	# Esto asegura que si estamos en una zona de mezcla con 70% Llanura y 30% Colina,
+	# sus pesos (0.7 y 0.3) se normalicen para sumar 1.0.
 	for data in blend_weights:
 		data.weight /= total_weight
 	
-	# Calcular altura final mezclando biomas
+	# 4. Calcular altura final y color (esta parte ya la tenías bien)
 	var final_height: float = 0.0
 	var final_color: Color = Color.BLACK
 	
@@ -476,7 +517,7 @@ func get_biome_height(world_x: float, world_z: float) -> Dictionary:
 		final_color += biome.color * weight
 	
 	return {"height": final_height, "color": final_color}
-
+	
 func is_chunk_loaded(chunk_pos: Vector2i) -> bool:
 	return loaded_chunks.has(chunk_pos)
 
@@ -504,9 +545,12 @@ func set_noise_seed(new_seed: int):
 	setup_biomes()
 	regenerate_all_chunks()
 
-func add_custom_biome(name: String, height: float, octaves_count: int, freq: float, min_thresh: float, max_thresh: float, color: Color = Color.WHITE):
-	"""Agrega un bioma personalizado"""
-	biomes.append(BiomeData.new(name, height, octaves_count, freq, min_thresh, max_thresh, color))
+func add_custom_biome(name: String, height: float, octaves_count: int, freq: float, min_core: float, max_core: float, blend_range: float, color: Color = Color.WHITE):
+	"""Agrega un bioma personalizado (versión actualizada para blending)"""
+	
+	# Pasamos todos los argumentos en el orden correcto
+	biomes.append(BiomeData.new(name, height, octaves_count, freq, min_core, max_core, blend_range, color))
+	
 	if enable_biomes:
 		regenerate_all_chunks()
 
@@ -518,18 +562,31 @@ func clear_biomes():
 		regenerate_all_chunks()
 
 func get_biome_at_position(world_pos: Vector3) -> String:
-	"""Retorna el nombre del bioma en una posición"""
+	"""Retorna el nombre del bioma dominante en una posición"""
 	if not enable_biomes or biomes.is_empty():
 		return "Sin bioma"
 	
+	# Usamos la misma lógica de / chunk_scale que ya tenías
 	var biome_value = biome_noise.get_noise_2d(world_pos.x / chunk_scale, world_pos.z / chunk_scale)
 	
-	for biome in biomes:
-		if biome.matches(biome_value):
-			return biome.name
+	var dominant_biome: String = "Desconocido"
+	var max_weight: float = 0.0
 	
-	return "Desconocido"
-
+	for biome in biomes:
+		var weight = biome.get_weight(biome_value)
+		if weight > max_weight:
+			max_weight = weight
+			dominant_biome = biome.name
+			
+	# Si el peso máximo es 1.0, estamos en un "núcleo"
+	if max_weight == 1.0:
+		return dominant_biome
+	# Si es menor que 1.0 pero mayor que 0, estamos en una zona de mezcla
+	elif max_weight > 0.0:
+		return "Transición (Dominante: %s)" % dominant_biome
+	
+	return "Desconocido (Valor: %.2f)" % biome_value
+	
 func get_biome_value_at_position(world_pos: Vector3) -> float:
 	"""Retorna el valor del ruido de bioma (para debug)"""
 	return biome_noise.get_noise_2d(world_pos.x / chunk_scale, world_pos.z / chunk_scale)

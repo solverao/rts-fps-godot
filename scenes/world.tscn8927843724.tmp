@@ -14,9 +14,8 @@ sky = SubResource("Sky_rwgxs")
 
 [node name="World" type="Node3D" node_paths=PackedStringArray("player")]
 script = ExtResource("1_nnsk1")
-render_distance = 8
 enable_biomes = true
-biome_scale = 0.02
+biome_scale = 0.008
 player = NodePath("Player")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="."]
