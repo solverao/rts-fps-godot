@@ -23,7 +23,6 @@ class_name TerrainChunkSystem
 @export var biome_blend_distance: float = 0.15  # Distancia de transición entre biomas
 
 @export_group("Visual Settings")
-@export_group("Visual Settings")
 @export var shader_resource: Shader
 @export var tex_grass: Texture2D
 @export var tex_rock: Texture2D
@@ -91,27 +90,35 @@ var shared_material: ShaderMaterial
 class BiomeData:
 	var name: String
 	var height_multiplier: float
+	var octaves: int
+	var frequency: float
 	var min_core: float
 	var max_core: float
 	var blend_range: float
 	var color: Color
-	var noise: FastNoiseLite # <-- AÑADIR ESTO
-
-	func _init(p_name: String, p_height: float, p_octaves: int, p_freq: float, p_min_core: float, p_max_core: float, p_blend: float, p_color: Color = Color.WHITE):
+	
+	# --- NUEVAS PROPIEDADES PARA SPLATMAP ---
+	var base_rock_weight: float
+	var base_sand_weight: float
+	
+	# Actualizamos _init para recibir los pesos de textura
+	func _init(p_name: String, p_height: float, p_octaves: int, p_freq: float, 
+			   p_min_core: float, p_max_core: float, p_blend: float, 
+			   p_color: Color = Color.WHITE,
+			   p_rock: float = 0.0, p_sand: float = 0.0): # <-- Nuevos parámetros
+		
 		name = p_name
 		height_multiplier = p_height
+		octaves = p_octaves
+		frequency = p_freq
 		min_core = p_min_core
 		max_core = p_max_core
 		blend_range = p_blend
 		color = p_color
 		
-		# Crear y configurar su PROPIO objeto de ruido
-		noise = FastNoiseLite.new()
-		noise.noise_type = FastNoiseLite.TYPE_PERLIN
-		noise.seed = randi() # O puedes pasarlo como parámetro
-		noise.fractal_octaves = p_octaves
-		noise.frequency = p_freq
-		# Puedes copiar más parámetros del 'noise' global si lo deseas
+		# Guardar pesos base
+		self.base_rock_weight = p_rock
+		self.base_sand_weight = p_sand
 
 	# NUEVA FUNCIÓN para calcular el peso (de 0.0 a 1.0)
 	func get_weight(biome_value: float) -> float:
@@ -198,56 +205,73 @@ func setup_noise():
 	biome_noise.cellular_distance_function = FastNoiseLite.DISTANCE_EUCLIDEAN
 
 func setup_biomes():
-	"""Configura los biomas predefinidos CON TRANSICIONES SUAVES"""
+	"""Configura los biomas predefinidos, incluyendo Playa y Volcán"""
 	biomes.clear()
 	
-	# Este es el valor clave: cuánto se difumina cada bioma (en espacio de ruido)
-	# Un valor más alto = transiciones más largas y suaves.
-	# ¡Tu variable @export biome_blend_distance = 10.0 NO sirve aquí!
-	# Te sugiero borrar esa variable y usar este valor, o cambiar
-	# el valor por defecto de tu @export a 0.15.
-	var blend_amount: float = biome_blend_distance
+	var blend_amount: float = biome_blend_distance # Usamos tu variable @export
 
-	# Bioma 1: Llanuras
-	# Núcleo: [-1.0, -0.4]
-	# Total (con blend): [-1.0, -0.25]
+	# --- RANGOS AJUSTADOS ---
+	# El ruido va de -1.0 a 1.0. Dividimos ese espacio:
+	
+	# Bioma 1: Playa (Arena 100%)
+	# Rango de ruido: [-1.0, -0.8]
+	biomes.append(BiomeData.new(
+		"Playa", 1.0, 1, 0.05, # Muy bajo y plano
+		-1.0,   # min_core
+		-0.8,   # max_core
+		blend_amount,
+		Color("e6d8ad"), # Color arena
+		0.0,  # p_rock: 0%
+		1.0   # p_sand: 100%
+	))
+
+	# Bioma 2: Llanuras (Ajustado)
+	# Rango de ruido: [-0.7, -0.4] (Deja espacio para mezclar con Playa)
 	biomes.append(BiomeData.new(
 		"Llanuras", 2.0, 1, 0.1,
-		-1.0,	 # min_core
-		-0.4,	 # max_core
+		-0.7,   # min_core (Ajustado)
+		-0.4,   # max_core
 		blend_amount,
-		Color(0.4, 0.7, 0.3)
+		Color(0.4, 0.7, 0.3),
+		0.0,  # p_rock: 0%
+		0.05  # p_sand: 5% (Un poco de arena)
 	))
 	
-	# Bioma 2: Colinas
-	# Núcleo: [-0.3, 0.3]
-	# Total (con blend): [-0.45, 0.45]
+	# Bioma 3: Colinas (Sin cambios)
+	# Rango de ruido: [-0.3, 0.3]
 	biomes.append(BiomeData.new(
 		"Colinas", 12.0, 3, 0.04,
-		-0.3,	 # min_core
-		0.3,	 # max_core
+		-0.3,   # min_core
+		0.3,    # max_core
 		blend_amount,
-		Color(0.35, 0.5, 0.25)
+		Color(0.35, 0.5, 0.25),
+		0.0,  # p_rock: 0% (La roca vendrá de la pendiente)
+		0.0   # p_sand: 0%
 	))
 	
-	# Bioma 3: Montañas
-	# Núcleo: [0.4, 1.0]
-	# Total (con blend): [0.25, 1.0]
+	# Bioma 4: Montañas (Ajustado)
+	# Rango de ruido: [0.4, 0.7] (Deja espacio para mezclar con Volcán)
 	biomes.append(BiomeData.new(
 		"Montañas", 65.0, 6, 0.02,
-		0.4,	 # min_core
-		1.0,	 # max_core
+		0.4,    # min_core
+		0.7,    # max_core (Ajustado)
 		blend_amount,
-		Color(0.5, 0.4, 0.35)
+		Color(0.5, 0.4, 0.35),
+		0.6,  # p_rock: 60%
+		0.0   # p_sand: 0%
 	))
 	
-	# NOTA DE CÓMO FUNCIONA:
-	# Llanuras (total) = [-1.0, -0.25]
-	# Colinas (total)  = [-0.45, 0.45]
-	# Montañas (total) = [0.25, 1.0]
-	#
-	# Hay solapamiento entre [-0.45, -0.25] (Llanuras y Colinas se mezclan)
-	# y entre [0.25, 0.45] (Colinas y Montañas se mezclan)
+	# Bioma 5: Volcán (Roca 100%)
+	# Rango de ruido: [0.8, 1.0]
+	biomes.append(BiomeData.new(
+		"Volcán", 80.0, 7, 0.015, # Muy alto y detallado
+		0.8,    # min_core
+		1.0,    # max_core
+		blend_amount,
+		Color("3d3d3d"), # Color roca oscura
+		1.0,  # p_rock: 100%
+		0.0   # p_sand: 0%
+	))
 	
 func setup_material():
 	# 1. Validar el shader
@@ -371,20 +395,41 @@ func generate_chunk(chunk_pos: Vector2i):
 	add_child(mesh_instance)
 	mesh_instance.position = chunk_to_world(chunk_pos)
 	
-	# 1. Obtener los datos generados
+	# 1. Obtener los datos generados (¡esto ya lo modificamos!)
 	var mesh_data: Dictionary = create_chunk_mesh(chunk_pos)
 	var mesh: ArrayMesh = mesh_data["mesh"]
 	var height_map: PackedFloat32Array = mesh_data["heights"]
 	
 	mesh_instance.mesh = mesh
-	mesh_instance.set_surface_override_material(0, shared_material)
 	
-	# ... (tu código de sombras y culling no cambia) ...
+	# 2. Generar el Splatmap ÚNICO para este chunk
+	#    ¡Asegúrate de pasar "chunk_pos" aquí!
+	var splatmap_texture = _generate_splatmap_texture(chunk_pos, height_map)
+	
+	# 3. DUPLICAR el material base
+	var unique_material = shared_material.duplicate()
+	
+	# 4. Asignar la textura splatmap ÚNICA a este material
+	unique_material.set_shader_parameter("tex_splatmap", splatmap_texture)
+	
+	# 5. Aplicar el material ÚNICO al mesh
+	mesh_instance.set_surface_override_material(0, unique_material)
+	
+	# --- FIN DEL CAMBIO ---
+	
+	# Configurar sombras
+	if enable_shadows:
+		mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	else:
+		mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	
+	# ... (tu código de frustum culling y colisión no cambia) ...
 	
 	var static_body: StaticBody3D = null
 	var collision_shape: CollisionShape3D = null
 	
 	if enable_collision:
+		# ... (tu lógica de HeightMapShape3D va aquí) ...
 		static_body = StaticBody3D.new()
 		mesh_instance.add_child(static_body)
 		static_body.collision_layer = collision_layer
@@ -393,25 +438,17 @@ func generate_chunk(chunk_pos: Vector2i):
 		collision_shape = CollisionShape3D.new()
 		static_body.add_child(collision_shape)
 		
-		# 2. ¡LA MAGIA! Crear el HeightMapShape3D (súper rápido)
 		var height_shape = HeightMapShape3D.new()
 		height_shape.map_width = chunk_size + 1
 		height_shape.map_depth = chunk_size + 1
 		height_shape.map_data = height_map
 		
-		# 3. Ajustar el tamaño y posición del shape
-		# El HeightMapShape3D se escala desde su centro
 		var terrain_size = float(chunk_size) * chunk_scale
 		collision_shape.shape = height_shape
-		
-		# Escalar el shape para que coincida con el mesh
 		collision_shape.scale = Vector3(chunk_scale, 1.0, chunk_scale)
-		
-		# Centrar el shape en el mesh
-		# (El mesh va de 0 a terrain_size, el shape centrado va de -terrain_size/2 a +terrain_size/2)
 		collision_shape.position = Vector3(terrain_size / 2.0, 0, terrain_size / 2.0)
-
-	# ... (tu código para guardar el chunk_data no cambia) ...
+	
+	# Guardar el chunk
 	var chunk_data = ChunkData.new(mesh_instance, chunk_pos)
 	chunk_data.static_body = static_body
 	chunk_data.collision_shape = collision_shape
@@ -524,24 +561,17 @@ func get_height_at_position(world_pos: Vector3) -> float:
 		return noise_value * height_multiplier
 
 func get_biome_height(world_x: float, world_z: float) -> Dictionary:
-	var biome_value = biome_noise.get_noise_2d(world_x, world_z)
+	"""Calcula la altura y color basándose en biomas con transiciones suaves"""
 	
-	var blend_weights: Array = []
-	var total_weight: float = 0.0
+	# 1. Obtenemos los pesos de bioma
+	var blend_weights = get_biome_blend_data(world_x, world_z)
 	
-	for biome in biomes:
-		var weight = biome.get_weight(biome_value)
-		if weight > 0.0:
-			blend_weights.append({"biome": biome, "weight": weight})
-			total_weight += weight
-	
-	if blend_weights.is_empty() or total_weight <= 0.0:
-		var noise_value = noise.get_noise_2d(world_x, world_z) # Usar ruido por defecto
+	# 2. Si no hay biomas, usar valores por defecto
+	if blend_weights.is_empty():
+		var noise_value = noise.get_noise_2d(world_x, world_z)
 		return {"height": noise_value * height_multiplier, "color": terrain_color}
 	
-	for data in blend_weights:
-		data.weight /= total_weight
-	
+	# 3. Calcular altura final y color (esta parte ya la tenías bien)
 	var final_height: float = 0.0
 	var final_color: Color = Color.BLACK
 	
@@ -549,11 +579,21 @@ func get_biome_height(world_x: float, world_z: float) -> Dictionary:
 		var biome: BiomeData = data.biome
 		var weight: float = data.weight
 		
-		# ¡YA NO MODIFICAMOS EL RUIDO GLOBAL!
-		# Simplemente usamos el ruido pre-configurado del bioma
-		var noise_value = biome.noise.get_noise_2d(world_x, world_z)
+		# Configurar noise temporalmente con parámetros del bioma
+		var original_octaves = noise.fractal_octaves
+		var original_frequency = noise.frequency
+		
+		noise.fractal_octaves = biome.octaves
+		noise.frequency = biome.frequency
+		
+		var noise_value = noise.get_noise_2d(world_x, world_z)
 		var biome_height = noise_value * biome.height_multiplier
 		
+		# Restaurar valores originales
+		noise.fractal_octaves = original_octaves
+		noise.frequency = original_frequency
+		
+		# Acumular con peso
 		final_height += biome_height * weight
 		final_color += biome.color * weight
 	
@@ -586,11 +626,15 @@ func set_noise_seed(new_seed: int):
 	setup_biomes()
 	regenerate_all_chunks()
 
-func add_custom_biome(name: String, height: float, octaves_count: int, freq: float, min_core: float, max_core: float, blend_range: float, color: Color = Color.WHITE):
-	"""Agrega un bioma personalizado (versión actualizada para blending)"""
+func add_custom_biome(name: String, height: float, octaves_count: int, freq: float, 
+					  min_core: float, max_core: float, blend_range: float, 
+					  color: Color = Color.WHITE,
+					  rock_weight: float = 0.0, sand_weight: float = 0.0): # <-- Nuevos params
 	
 	# Pasamos todos los argumentos en el orden correcto
-	biomes.append(BiomeData.new(name, height, octaves_count, freq, min_core, max_core, blend_range, color))
+	biomes.append(BiomeData.new(name, height, octaves_count, freq, 
+								min_core, max_core, blend_range, 
+								color, rock_weight, sand_weight)) # <-- Pasarlos al constructor
 	
 	if enable_biomes:
 		regenerate_all_chunks()
@@ -688,3 +732,124 @@ func _get_configuration_warnings() -> PackedStringArray:
 func _update_shader_param(param_name: StringName, value):
 	if shared_material:
 		shared_material.set_shader_parameter(param_name, value)
+
+# Esta función crea la textura splatmap para UN chunk
+# REEMPLAZA tu vieja _generate_splatmap_texture con esta
+# ¡OJO! Ahora recibe "chunk_pos" como primer argumento
+func _generate_splatmap_texture(chunk_pos: Vector2i, height_map: PackedFloat32Array) -> ImageTexture:
+	var verts_per_side = chunk_size + 1
+	var img = Image.create(verts_per_side, verts_per_side, false, Image.FORMAT_RGBA8)
+
+	# Leer los parámetros globales desde tus variables @export
+	var p_sand_height = sand_height
+	var p_sand_blend = sand_blend_range
+	var p_slope_sharp = slope_sharpness
+	
+	var offset_x = chunk_pos.x * chunk_size
+	var offset_z = chunk_pos.y * chunk_size
+
+	# Recorremos cada píxel (que corresponde a un vértice)
+	for x in range(verts_per_side):
+		for z in range(verts_per_side):
+			
+			# Posición mundial del vértice/píxel
+			var world_x = float(offset_x + x)
+			var world_z = float(offset_z + z)
+			
+			# --- 1. Calcular Lógica Global (Altura y Pendiente) ---
+			var y = height_map[z * verts_per_side + x]
+			var slope = _calculate_slope_at(height_map, x, z, verts_per_side)
+			
+			# Peso "físico" de la arena (basado en altura)
+			var global_sand_weight = smoothstep(p_sand_height + p_sand_blend, p_sand_height - p_sand_blend, y)
+			
+			# Peso "físico" de la roca (basado en pendiente)
+			var global_rock_weight = pow(slope, p_slope_sharp)
+			
+			# --- 2. Calcular Lógica de Biomas ---
+			var blend_weights = get_biome_blend_data(world_x, world_z)
+			
+			var biome_rock_weight = 0.0
+			var biome_sand_weight = 0.0
+			
+			if not blend_weights.is_empty():
+				for data in blend_weights:
+					var biome: BiomeData = data.biome
+					var weight: float = data.weight
+					
+					# Mezclamos los pesos base de los biomas
+					biome_rock_weight += biome.base_rock_weight * weight
+					biome_sand_weight += biome.base_sand_weight * weight
+			
+			# --- 3. Combinar Lógicas (¡Aquí está el control artístico!) ---
+			
+			# Canal R (Roca): Es el MÁXIMO entre lo que dice el bioma Y la pendiente.
+			# (Así, las Colinas pueden tener roca en pendientes, aunque su base sea 0% roca)
+			var final_rock_weight = max(biome_rock_weight, global_rock_weight)
+			
+			# Canal G (Arena): Es el MÁXIMO entre lo que dice el bioma Y la altura.
+			# (Así, las Llanuras pueden tener arena, y también aparecerá arena si están bajo el "agua")
+			var final_sand_weight = max(biome_sand_weight, global_sand_weight)
+			
+			# --- 4. Corregir y Normalizar ---
+			
+			# La arena siempre gana a la roca (no pueden estar en el mismo sitio)
+			final_rock_weight = final_rock_weight * (1.0 - final_sand_weight)
+			
+			# Asegurarnos de que no pasen de 1.0
+			final_rock_weight = clamp(final_rock_weight, 0.0, 1.0)
+			final_sand_weight = clamp(final_sand_weight, 0.0, 1.0)
+			
+			# 5. Pintar el Píxel
+			# R = Roca, G = Arena, B = No usado, A = No usado
+			# El Pasto se calcula en el shader como (1.0 - R - G)
+			img.set_pixel(x, z, Color(final_rock_weight, final_sand_weight, 0.0))
+
+	# Convertir la Imagen (CPU) a una Textura (GPU)
+	return ImageTexture.create_from_image(img)
+	
+# Función helper para calcular la pendiente en un punto del heightmap
+func _calculate_slope_at(height_map: PackedFloat32Array, x: int, z: int, width: int) -> float:
+	# Índices de los vecinos
+	var x_left = max(x - 1, 0)
+	var x_right = min(x + 1, width - 1)
+	var z_down = max(z - 1, 0)
+	var z_up = min(z + 1, width - 1)
+	
+	# Alturas de los vecinos
+	var y_L = height_map[z * width + x_left]
+	var y_R = height_map[z * width + x_right]
+	var y_D = height_map[z_down * width + x]
+	var y_U = height_map[z_up * width + x]
+	
+	# Calcular la normal del vértice usando diferencias finitas
+	# (Esto crea un vector 3D que apunta "hacia afuera" de la superficie)
+	var normal = Vector3(y_L - y_R, 2.0 * chunk_scale, y_D - y_U).normalized()
+	
+	# La pendiente es 1.0 - normal.y (igual que en el shader)
+	# normal.y == 1.0 si es plano, 0.0 si es vertical
+	return 1.0 - normal.y
+
+func get_biome_blend_data(world_x: float, world_z: float) -> Array:
+	"""Devuelve un array de biomas y sus pesos normalizados en un punto."""
+	var biome_value = biome_noise.get_noise_2d(world_x, world_z)
+	
+	var blend_weights: Array = []
+	var total_weight: float = 0.0
+	
+	# 1. Obtener el peso de CADA bioma
+	for biome in biomes:
+		var weight = biome.get_weight(biome_value)
+		if weight > 0.0:
+			blend_weights.append({"biome": biome, "weight": weight})
+			total_weight += weight
+	
+	# 2. Si no encontramos bioma o peso, retornar array vacío
+	if blend_weights.is_empty() or total_weight <= 0.0:
+		return []
+	
+	# 3. Normalizar pesos (dividir por el total)
+	for data in blend_weights:
+		data.weight /= total_weight
+		
+	return blend_weights
