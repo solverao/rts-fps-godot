@@ -387,6 +387,7 @@ func chunk_to_world(chunk_pos: Vector2i) -> Vector3:
 		chunk_pos.y * chunk_world_size
 	)
 
+# --- FUNCIÓN MODIFICADA ---
 func generate_chunk(chunk_pos: Vector2i):
 	if loaded_chunks.has(chunk_pos):
 		return
@@ -395,41 +396,44 @@ func generate_chunk(chunk_pos: Vector2i):
 	add_child(mesh_instance)
 	mesh_instance.position = chunk_to_world(chunk_pos)
 	
-	# 1. Obtener los datos generados (¡esto ya lo modificamos!)
-	var mesh_data: Dictionary = create_chunk_mesh(chunk_pos)
+	# 1. Generar datos CON padding (1 vértice extra en cada lado)
+	var padded_data = _generate_padded_data(chunk_pos)
+	
+	# 2. Obtener los datos del mesh (ahora usa los datos 'padded')
+	var mesh_data: Dictionary = create_chunk_mesh(chunk_pos, padded_data)
 	var mesh: ArrayMesh = mesh_data["mesh"]
-	var height_map: PackedFloat32Array = mesh_data["heights"]
+	var height_map: PackedFloat32Array = mesh_data["heights"] # Este es el SIN padding
 	
 	mesh_instance.mesh = mesh
 	
-	# 2. Generar el Splatmap ÚNICO para este chunk
-	#    ¡Asegúrate de pasar "chunk_pos" aquí!
-	var splatmap_texture = _generate_splatmap_texture(chunk_pos, height_map)
+	# 3. Generar el Splatmap ÚNICO (ahora usa los datos 'padded')
+	var splatmap_texture = _generate_splatmap_texture(chunk_pos, padded_data)
 	
-	# 3. DUPLICAR el material base
+	# 4. DUPLICAR el material base
 	var unique_material = shared_material.duplicate()
 	
-	# 4. Asignar la textura splatmap ÚNICA a este material
+	# 5. Asignar la textura splatmap ÚNICA a este material
 	unique_material.set_shader_parameter("tex_splatmap", splatmap_texture)
 	
-	# 5. Aplicar el material ÚNICO al mesh
+	# 6. Aplicar el material ÚNICO al mesh
 	mesh_instance.set_surface_override_material(0, unique_material)
 	
-	# --- FIN DEL CAMBIO ---
+	# --- FIN DE LOS CAMBIOS DE COSTURAS ---
 	
-	# Configurar sombras
+	# Configurar sombras (sin cambios)
 	if enable_shadows:
 		mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	else:
 		mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	
-	# ... (tu código de frustum culling y colisión no cambia) ...
+	# ... (código de frustum culling) ...
 	
 	var static_body: StaticBody3D = null
 	var collision_shape: CollisionShape3D = null
 	
 	if enable_collision:
-		# ... (tu lógica de HeightMapShape3D va aquí) ...
+		# Esta lógica no cambia, ya que 'mesh_data["heights"]'
+		# es el array SIN padding del tamaño correcto
 		static_body = StaticBody3D.new()
 		mesh_instance.add_child(static_body)
 		static_body.collision_layer = collision_layer
@@ -448,44 +452,46 @@ func generate_chunk(chunk_pos: Vector2i):
 		collision_shape.scale = Vector3(chunk_scale, 1.0, chunk_scale)
 		collision_shape.position = Vector3(terrain_size / 2.0, 0, terrain_size / 2.0)
 	
-	# Guardar el chunk
+	# Guardar el chunk (sin cambios)
 	var chunk_data = ChunkData.new(mesh_instance, chunk_pos)
 	chunk_data.static_body = static_body
 	chunk_data.collision_shape = collision_shape
 	loaded_chunks[chunk_pos] = chunk_data
-	
-func create_chunk_mesh(chunk_pos: Vector2i) -> Dictionary: # ¡Ahora devuelve un Diccionario!
+		
+# --- FUNCIÓN MODIFICADA ---
+func create_chunk_mesh(chunk_pos: Vector2i, padded_data: Dictionary) -> Dictionary:
+	# Extraer datos 'padded'
+	var padded_heights: PackedFloat32Array = padded_data["heights"]
+	var padded_colors: PackedColorArray = padded_data["colors"]
+	var padded_width: int = padded_data["width"]
+
 	var vertices: PackedVector3Array = []
 	var uvs: PackedVector2Array = []
 	var colors: PackedColorArray = []
+	var normals: PackedVector3Array = [] # <-- Array para normales custom
 	var indices: PackedInt32Array = []
 	
-	var verts_per_side = chunk_size + 1
+	var verts_per_side = chunk_size + 1 # Tamaño de la malla final
 	
-	# Array para el HeightMapShape3D
+	# Array para el HeightMapShape3D (sin padding)
 	var height_map_data: PackedFloat32Array = []
 	height_map_data.resize(verts_per_side * verts_per_side)
 	
-	var offset_x = chunk_pos.x * chunk_size
-	var offset_z = chunk_pos.y * chunk_size
 	var uv_scale = 1.0 / float(chunk_size)
 	
-	var idx = 0 # Índice para el height_map_data
+	# 1. Construir Vértices, Normales y Colisión
+	# Iteramos sobre el tamaño FINAL (sin padding)
 	for x in range(verts_per_side):
 		for z in range(verts_per_side):
-			var world_x = offset_x + x
-			var world_z = offset_z + z
 			
-			var y: float
-			var vertex_color: Color = terrain_color
+			# Mapeamos (x, z) a los índices del array 'padded'
+			# (x=0, z=0) -> (px=1, pz=1)
+			var padded_x = x + 1
+			var padded_z = z + 1
+			var padded_idx = padded_z * padded_width + padded_x
 			
-			if enable_biomes:
-				var height_data = get_biome_height(float(world_x), float(world_z))
-				y = height_data.height
-				vertex_color = height_data.color
-			else:
-				var noise_value = noise.get_noise_2d(float(world_x), float(world_z))
-				y = noise_value * height_multiplier
+			var y = padded_heights[padded_idx]
+			var vertex_color = padded_colors[padded_idx]
 			
 			# Posición local del vértice
 			var position = Vector3(float(x) * chunk_scale, y, float(z) * chunk_scale)
@@ -493,14 +499,14 @@ func create_chunk_mesh(chunk_pos: Vector2i) -> Dictionary: # ¡Ahora devuelve un
 			colors.append(vertex_color)
 			uvs.append(Vector2(float(x) * uv_scale, float(z) * uv_scale))
 			
-			# Guardar altura para la colisión
-			# NOTA: HeightMapShape3D está centrado, el mesh no.
-			# Ajustamos la posición local.
-			height_map_data[z * verts_per_side + x] = y # ¡OJO! Godot lee Z-primero
+			# ¡Calcular y guardar la normal correcta!
+			var normal = _calculate_normal_at(padded_heights, padded_x, padded_z, padded_width)
+			normals.append(normal)
 			
-			idx += 1
-	
-	# ... (tu código para generar índices no cambia) ...
+			# Guardar altura para la colisión
+			height_map_data[z * verts_per_side + x] = y # (Z-primero)
+
+	# 2. Construir Índices (sin cambios)
 	for x in range(chunk_size):
 		for z in range(chunk_size):
 			var v0 = x * verts_per_side + z
@@ -510,25 +516,27 @@ func create_chunk_mesh(chunk_pos: Vector2i) -> Dictionary: # ¡Ahora devuelve un
 			indices.append(v0); indices.append(v1); indices.append(v2)
 			indices.append(v1); indices.append(v3); indices.append(v2)
 
-	# Crear la malla
+	# 3. Crear la malla
 	var arrays = []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = vertices
 	arrays[Mesh.ARRAY_TEX_UV] = uvs
 	arrays[Mesh.ARRAY_COLOR] = colors
+	arrays[Mesh.ARRAY_NORMAL] = normals # <-- Asignar normales custom
 	arrays[Mesh.ARRAY_INDEX] = indices
 	
 	var array_mesh = ArrayMesh.new()
 	array_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	
+	# 4. Generar Tangentes (¡usando nuestras normales!)
 	var st = SurfaceTool.new()
 	st.create_from(array_mesh, 0)
-	st.generate_normals()
-	st.generate_tangents()
+	# ¡NO LLAMAR a st.generate_normals()!
+	st.generate_tangents() # Esto usará nuestras normales para generar tangentes
 	
-	# ¡Devolver AMBOS, el mesh y los datos de altura!
+	# 5. Devolver resultados
 	return {
-		"mesh": st.commit(),
+		"mesh": st.commit(), # 'commit' aplica las tangentes
 		"heights": height_map_data
 	}
 	
@@ -736,11 +744,18 @@ func _update_shader_param(param_name: StringName, value):
 # Esta función crea la textura splatmap para UN chunk
 # REEMPLAZA tu vieja _generate_splatmap_texture con esta
 # ¡OJO! Ahora recibe "chunk_pos" como primer argumento
-func _generate_splatmap_texture(chunk_pos: Vector2i, height_map: PackedFloat32Array) -> ImageTexture:
-	var verts_per_side = chunk_size + 1
+# --- FUNCIÓN MODIFICADA ---
+# Ahora recibe 'padded_data'
+# --- FUNCIÓN MODIFICADA ---
+# Ahora recibe 'padded_data'
+func _generate_splatmap_texture(chunk_pos: Vector2i, padded_data: Dictionary) -> ImageTexture:
+	# Extraer datos 'padded'
+	var padded_heights: PackedFloat32Array = padded_data["heights"]
+	var padded_width: int = padded_data["width"]
+
+	var verts_per_side = chunk_size + 1 # Tamaño de la imagen final
 	var img = Image.create(verts_per_side, verts_per_side, false, Image.FORMAT_RGBA8)
 
-	# Leer los parámetros globales desde tus variables @export
 	var p_sand_height = sand_height
 	var p_sand_blend = sand_blend_range
 	var p_slope_sharp = slope_sharpness
@@ -748,27 +763,33 @@ func _generate_splatmap_texture(chunk_pos: Vector2i, height_map: PackedFloat32Ar
 	var offset_x = chunk_pos.x * chunk_size
 	var offset_z = chunk_pos.y * chunk_size
 
-	# Recorremos cada píxel (que corresponde a un vértice)
+	# Recorremos cada píxel (que corresponde a un vértice FINAL)
 	for x in range(verts_per_side):
 		for z in range(verts_per_side):
 			
-			# Posición mundial del vértice/píxel
+			# Mapeamos (x, z) a los índices del array 'padded'
+			var padded_x = x + 1
+			var padded_z = z + 1
+			var padded_idx = padded_z * padded_width + padded_x
+			
+			# Posición mundial (sin cambios)
 			var world_x = float(offset_x + x)
 			var world_z = float(offset_z + z)
 			
 			# --- 1. Calcular Lógica Global (Altura y Pendiente) ---
-			var y = height_map[z * verts_per_side + x]
-			var slope = _calculate_slope_at(height_map, x, z, verts_per_side)
 			
-			# Peso "físico" de la arena (basado en altura)
+			# Obtener altura desde los datos 'padded'
+			var y = padded_heights[padded_idx]
+			
+			# ¡Calcular pendiente usando los datos 'padded' y los índices 'padded'!
+			var slope = _calculate_slope_at(padded_heights, padded_x, padded_z, padded_width)
+			
+			# El resto de la lógica de splatmap no necesita cambios
 			var global_sand_weight = smoothstep(p_sand_height + p_sand_blend, p_sand_height - p_sand_blend, y)
-			
-			# Peso "físico" de la roca (basado en pendiente)
 			var global_rock_weight = pow(slope, p_slope_sharp)
 			
-			# --- 2. Calcular Lógica de Biomas ---
+			# --- 2. Calcular Lógica de Biomas (sin cambios) ---
 			var blend_weights = get_biome_blend_data(world_x, world_z)
-			
 			var biome_rock_weight = 0.0
 			var biome_sand_weight = 0.0
 			
@@ -776,45 +797,32 @@ func _generate_splatmap_texture(chunk_pos: Vector2i, height_map: PackedFloat32Ar
 				for data in blend_weights:
 					var biome: BiomeData = data.biome
 					var weight: float = data.weight
-					
-					# Mezclamos los pesos base de los biomas
 					biome_rock_weight += biome.base_rock_weight * weight
 					biome_sand_weight += biome.base_sand_weight * weight
 			
-			# --- 3. Combinar Lógicas (¡Aquí está el control artístico!) ---
-			
-			# Canal R (Roca): Es el MÁXIMO entre lo que dice el bioma Y la pendiente.
-			# (Así, las Colinas pueden tener roca en pendientes, aunque su base sea 0% roca)
+			# --- 3. Combinar Lógicas (sin cambios) ---
 			var final_rock_weight = max(biome_rock_weight, global_rock_weight)
-			
-			# Canal G (Arena): Es el MÁXIMO entre lo que dice el bioma Y la altura.
-			# (Así, las Llanuras pueden tener arena, y también aparecerá arena si están bajo el "agua")
-			var final_sand_weight = max(biome_sand_weight, global_sand_weight)
-			
-			# --- 4. Corregir y Normalizar ---
-			
-			# La arena siempre gana a la roca (no pueden estar en el mismo sitio)
+			var final_sand_weight = max(biome_sand_weight, global_sand_weight)		
+				
+			# --- 4. Corregir y Normalizar (sin cambios) ---
 			final_rock_weight = final_rock_weight * (1.0 - final_sand_weight)
-			
-			# Asegurarnos de que no pasen de 1.0
 			final_rock_weight = clamp(final_rock_weight, 0.0, 1.0)
 			final_sand_weight = clamp(final_sand_weight, 0.0, 1.0)
 			
-			# 5. Pintar el Píxel
-			# R = Roca, G = Arena, B = No usado, A = No usado
-			# El Pasto se calcula en el shader como (1.0 - R - G)
+			# 5. Pintar el Píxel (sin cambios)
 			img.set_pixel(x, z, Color(final_rock_weight, final_sand_weight, 0.0))
 
-	# Convertir la Imagen (CPU) a una Textura (GPU)
 	return ImageTexture.create_from_image(img)
 	
 # Función helper para calcular la pendiente en un punto del heightmap
+# --- FUNCIÓN MODIFICADA ---
+# (Eliminamos max() y min() de los índices)
 func _calculate_slope_at(height_map: PackedFloat32Array, x: int, z: int, width: int) -> float:
-	# Índices de los vecinos
-	var x_left = max(x - 1, 0)
-	var x_right = min(x + 1, width - 1)
-	var z_down = max(z - 1, 0)
-	var z_up = min(z + 1, width - 1)
+	# Índices de los vecinos (¡SIN CLAMPING!)
+	var x_left = x - 1
+	var x_right = x + 1
+	var z_down = z - 1
+	var z_up = z + 1
 	
 	# Alturas de los vecinos
 	var y_L = height_map[z * width + x_left]
@@ -822,12 +830,10 @@ func _calculate_slope_at(height_map: PackedFloat32Array, x: int, z: int, width: 
 	var y_D = height_map[z_down * width + x]
 	var y_U = height_map[z_up * width + x]
 	
-	# Calcular la normal del vértice usando diferencias finitas
-	# (Esto crea un vector 3D que apunta "hacia afuera" de la superficie)
+	# Calcular la normal del vértice
 	var normal = Vector3(y_L - y_R, 2.0 * chunk_scale, y_D - y_U).normalized()
 	
-	# La pendiente es 1.0 - normal.y (igual que en el shader)
-	# normal.y == 1.0 si es plano, 0.0 si es vertical
+	# La pendiente es 1.0 - normal.y
 	return 1.0 - normal.y
 
 func get_biome_blend_data(world_x: float, world_z: float) -> Array:
@@ -853,3 +859,58 @@ func get_biome_blend_data(world_x: float, world_z: float) -> Array:
 		data.weight /= total_weight
 		
 	return blend_weights
+
+
+
+# --- NUEVA FUNCIÓN ---
+# Genera los datos de altura y color en una cuadrícula más grande
+# (con 1 vértice de padding en todas las direcciones)
+func _generate_padded_data(chunk_pos: Vector2i) -> Dictionary:
+	var verts_per_side = chunk_size + 1
+	var padded_width = verts_per_side + 2 # +2 para el padding de -1 y +1
+	var padded_size = padded_width * padded_width
+	
+	var padded_heights: PackedFloat32Array
+	var padded_colors: PackedColorArray
+	padded_heights.resize(padded_size)
+	padded_colors.resize(padded_size)
+	
+	var offset_x = chunk_pos.x * chunk_size
+	var offset_z = chunk_pos.y * chunk_size
+	
+	for x in range(padded_width):
+		for z in range(padded_width):
+			# Restamos 1 para que el bucle (0,0) muestree en (-1, -1)
+			var world_x = float(offset_x + x - 1)
+			var world_z = float(offset_z + z - 1)
+			
+			var height_data: Dictionary
+			if enable_biomes:
+				height_data = get_biome_height(world_x, world_z)
+			else:
+				var noise_value = noise.get_noise_2d(world_x, world_z)
+				height_data = {"height": noise_value * height_multiplier, "color": terrain_color}
+
+			var idx = z * padded_width + x
+			padded_heights[idx] = height_data.height
+			padded_colors[idx] = height_data.color
+			
+	return {
+		"heights": padded_heights,
+		"colors": padded_colors,
+		"width": padded_width
+	}
+	
+# --- NUEVA FUNCIÓN ---
+# Calcula la normal del vértice usando los datos 'padded'
+# Nota: 'x' y 'z' son los índices en el array 'padded' (ej. 1 a verts_per_side)
+func _calculate_normal_at(padded_heights: PackedFloat32Array, x: int, z: int, width: int) -> Vector3:
+	# Obtenemos alturas de vecinos (¡sin 'max' o 'min'!)
+	var y_L = padded_heights[z * width + (x - 1)]
+	var y_R = padded_heights[z * width + (x + 1)]
+	var y_D = padded_heights[(z - 1) * width + x]
+	var y_U = padded_heights[(z + 1) * width + x]
+	
+	# Calcula la normal
+	var normal = Vector3(y_L - y_R, 2.0 * chunk_scale, y_D - y_U).normalized()
+	return normal
