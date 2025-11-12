@@ -1,11 +1,7 @@
-[gd_scene load_steps=10 format=3 uid="uid://b20gpggjpay8a"]
+[gd_scene load_steps=6 format=3 uid="uid://b20gpggjpay8a"]
 
 [ext_resource type="Script" uid="uid://c48nm5pmpil8g" path="res://world_generator.gd" id="1_nnsk1"]
-[ext_resource type="Shader" uid="uid://bcrjcpog0fwew" path="res://terrain_splatmap.gdshader" id="2_qfnet"]
 [ext_resource type="PackedScene" uid="uid://domhm87hbhbg1" path="res://demo/components/Player.tscn" id="2_rwgxs"]
-[ext_resource type="Texture2D" uid="uid://cqo6lxeivaqh3" path="res://textures/grass.jpg" id="3_i7141"]
-[ext_resource type="Texture2D" uid="uid://c88j3oj0lf6om" path="res://demo/assets/textures/rock023_alb_ht.png" id="3_qfnet"]
-[ext_resource type="Texture2D" uid="uid://blk062gkhjryc" path="res://sand.jpg" id="4_i7141"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_nnsk1"]
 
@@ -19,11 +15,6 @@ sky = SubResource("Sky_rwgxs")
 [node name="World" type="Node3D" node_paths=PackedStringArray("player")]
 script = ExtResource("1_nnsk1")
 enable_biomes = true
-biome_scale = 0.005
-shader_resource = ExtResource("2_qfnet")
-tex_grass = ExtResource("3_i7141")
-tex_rock = ExtResource("3_qfnet")
-tex_sand = ExtResource("4_i7141")
 player = NodePath("Player")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="."]
